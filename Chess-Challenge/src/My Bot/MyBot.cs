@@ -1,5 +1,6 @@
 ﻿using ChessChallenge.API;
 using System.Security.Cryptography;
+using System.Xml.Linq;
 
 
 public class MyBot : IChessBot
@@ -8,23 +9,25 @@ public class MyBot : IChessBot
     //=========
 
     //Color (set at game start)
-    bool am_white;
+    int am_white;
 
     //Piece Values (centipawns)
     int[] piece_val_arr = { 100, 300, 300, 500, 900 };
     //=========
 
+    //Search Depth
+    int search_depth = 4;
     // \Constants
     public Move Think(Board board, Timer timer)
     {
-        am_white = board.IsWhiteToMove;
+        am_white = board.IsWhiteToMove ? 1 : -1;
         int best_score = int.MinValue;
         Move[] moves = board.GetLegalMoves();
         Move best_move = moves[0];
         foreach (Move move in moves) 
         {
             board.MakeMove(move);
-            int pos_eval = evaluate(board);
+            int pos_eval = -negamax(board, search_depth-1, am_white*-1);
             if (pos_eval > best_score)
             {
                 best_score = pos_eval;
@@ -33,6 +36,22 @@ public class MyBot : IChessBot
             board.UndoMove(move);
         }
         return best_move;
+    }
+
+    public int negamax(Board board, int depth, int color) //white is 1, black is -1
+    {
+        if (depth == 0 || board.IsInCheckmate())
+            return color * evaluate(board);
+        int score = int.MinValue;
+        Move[] moves = board.GetLegalMoves();
+        foreach (Move move in moves)
+        {
+            board.MakeMove(move);
+            int search_score = -negamax(board, depth - 1, -1 * color);
+            board.UndoMove(move);
+            score = (score > search_score) ? score : search_score;
+        }
+        return score;
     }
 
     public int evaluate(Board board)
@@ -58,6 +77,6 @@ public class MyBot : IChessBot
             }
         }
         int eval = white_points-black_points;
-        return am_white ? eval : -1*eval;
+        return eval;
     }
 }
