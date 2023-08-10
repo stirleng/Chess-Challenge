@@ -100,7 +100,7 @@ public class MyBot : IChessBot
 
             //Material
             //========
-            if (piece_type != 6) //skip king values, since they are N/A
+            if ((int)piece_type != 6) //skip king values, since they are N/A
             {
                 if (i < 6) //white pieces
                 {
@@ -116,24 +116,27 @@ public class MyBot : IChessBot
 
             //Mobility
             //========
-            foreach (Piece piece in piece_type_list)
+            if ((int)piece_type != 1) //ignore pawn mobility
             {
-                white_piece_attacks_bb = GetPieceAttacks(piece_type, piece.Square, board, 1);
-                black_piece_attacks_bb = GetPieceAttacks(piece_type, piece.Square, board, 0);
-
-                white_mobility += GetNumberOfSetBits(white_piece_attacks_bb); //TODO:: set and calibrate a multiplier on squares attacked to get a mobility score
-                black_mobility += GetNumberOfSetBits(black_piece_attacks_bb);
+                foreach (Piece piece in piece_type_list)
+                {
+                    if (piece.IsWhite)
+                    {
+                        white_piece_attacks_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, true);
+                        white_mobility += BitboardHelper.GetNumberOfSetBits(white_piece_attacks_bb) * 10; //TODO:: set and calibrate a multiplier on squares attacked to get a mobility score
+                        //BitboardHelper.VisualizeBitboard(white_piece_attacks_bb);
+                    }
+                    else
+                    {
+                        black_piece_attacks_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, false);
+                        black_mobility += BitboardHelper.GetNumberOfSetBits(black_piece_attacks_bb) * 10;
+                    } 
+                }
             }
             //========
             //Mobility
         }
-
-
-        
-
-        
-
-        int eval = (white_points - black_points) + (white_checkmates - black_checkmates);
+        int eval = (white_points - black_points) + (white_checkmates - black_checkmates) + (white_mobility - black_mobility);
         return eval;
     }
 
