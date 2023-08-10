@@ -60,6 +60,9 @@ public class MyBot : IChessBot
 
     public int evaluate(Board board)
     {
+        //Material
+        //========
+
         int white_points = 0;  //material counts (centipawns)
         int black_points = 0;
 
@@ -80,7 +83,18 @@ public class MyBot : IChessBot
                 black_points += piece_count * piece_val_arr[i - 6];
             }
         }
-        int eval = white_points-black_points;
+        //========
+        //Material
+        int white_to_move = board.IsWhiteToMove ? 0 : 1;
+        int black_to_move = board.IsWhiteToMove ? 1 : 0;
+        int is_checkmate = board.IsInCheckmate() ? 1 : 0;
+        int white_checkmates = 10000 * white_to_move * is_checkmate;
+        int black_checkmates = 10000 * black_to_move * is_checkmate;
+        if (black_checkmates != 0 || white_checkmates != 0)
+        {
+
+        }
+        int eval = (white_points - black_points) + (white_checkmates - black_checkmates);
         return eval;
     }
 
