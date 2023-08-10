@@ -60,40 +60,79 @@ public class MyBot : IChessBot
 
     public int evaluate(Board board)
     {
-        //Material
-        //========
+        //reused local vars (ik the compiler can maybe handle the optimization but taking no chances)
+        //==========
 
+        //general
+        PieceList[] piece_lists = board.GetAllPieceLists();     //getting pieces
+        PieceList piece_type_list;
+
+        //Material
         int white_points = 0;  //material counts (centipawns)
         int black_points = 0;
 
-        PieceList[] piece_lists = board.GetAllPieceLists();     //getting pieces
+        //Mobility
+        PieceType piece_type;
+        ulong white_piece_attacks_bb;
+        ulong black_piece_attacks_bb;
+        int white_mobility = 0;
+        int black_mobility = 0;
 
-        for (int i = 0; i < 11; i++) //stop at 10 to skip black king value
-        {
-            if (i == 5) //skip white king value
-                continue;
-            PieceList piece_type_list = piece_lists[i];
-            int piece_count = piece_type_list.Count;
-            if (i < 6) //white pieces
-            {
-                white_points += piece_count * piece_val_arr[i];
-            }
-            else //black pieces
-            {
-                black_points += piece_count * piece_val_arr[i - 6];
-            }
-        }
-        //========
-        //Material
+        //==========
+        //reused local vars
+
+        //checkmate
+        //=========
         int white_to_move = board.IsWhiteToMove ? 0 : 1;
         int black_to_move = board.IsWhiteToMove ? 1 : 0;
         int is_checkmate = board.IsInCheckmate() ? 1 : 0;
         int white_checkmates = 10000 * white_to_move * is_checkmate;
         int black_checkmates = 10000 * black_to_move * is_checkmate;
-        if (black_checkmates != 0 || white_checkmates != 0)
-        {
+        //=========
+        //checkmate
 
+        for (int i = 0; i < 12; i++) //iterating over all pieces
+        {
+            //vars set for every new piece type
+            piece_type_list = piece_lists[i];
+            int piece_count = piece_type_list.Count;
+            piece_type = piece_lists[i].TypeOfPieceInList;
+
+            //Material
+            //========
+            if (piece_type != 6) //skip king values, since they are N/A
+            {
+                if (i < 6) //white pieces
+                {
+                    white_points += piece_count * piece_val_arr[i];
+                }
+                else //black pieces
+                {
+                    black_points += piece_count * piece_val_arr[i - 6];
+                }
+            }
+            //========
+            //Material
+
+            //Mobility
+            //========
+            foreach (Piece piece in piece_type_list)
+            {
+                white_piece_attacks_bb = GetPieceAttacks(piece_type, piece.Square, board, 1);
+                black_piece_attacks_bb = GetPieceAttacks(piece_type, piece.Square, board, 0);
+
+                white_mobility += GetNumberOfSetBits(white_piece_attacks_bb); //TODO:: set and calibrate a multiplier on squares attacked to get a mobility score
+                black_mobility += GetNumberOfSetBits(black_piece_attacks_bb);
+            }
+            //========
+            //Mobility
         }
+
+
+        
+
+        
+
         int eval = (white_points - black_points) + (white_checkmates - black_checkmates);
         return eval;
     }
