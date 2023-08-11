@@ -136,7 +136,7 @@ public class MyBot : IChessBot
 
             foreach (Piece piece in piece_type_list)
             {
-                if ((int)piece_type != 1) //ignore pawns
+                if ((int)piece_type != 1 && (int)piece_type != 6) //ignore pawns and kings
                 {
                     if (piece.IsWhite)
                     {
