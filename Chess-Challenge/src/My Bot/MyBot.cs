@@ -60,7 +60,7 @@ public class MyBot : IChessBot
 
     public int evaluate(Board board)
     {
-        //reused local vars (ik the compiler can maybe handle the optimization but taking no chances)
+        //local vars (ik the compiler can maybe handle the optimization but taking no chances)
         //==========
 
         //general
@@ -81,18 +81,21 @@ public class MyBot : IChessBot
         int white_mobility = 0;
         int black_mobility = 0;
 
-        //==========
-        //reused local vars
-
         //checkmate
-        //=========
         int white_to_move = board.IsWhiteToMove ? 0 : 1;
         int black_to_move = board.IsWhiteToMove ? 1 : 0;
         int is_checkmate = board.IsInCheckmate() ? 1 : 0;
-        int white_checkmates = 10000 * white_to_move * is_checkmate;
-        int black_checkmates = 10000 * black_to_move * is_checkmate;
-        //=========
-        //checkmate
+        int white_checkmates = 100000 * white_to_move * is_checkmate;
+        int black_checkmates = 100000 * black_to_move * is_checkmate;
+
+        //King Safety
+        int white_safety_score = BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetKingAttacks(piece_lists[5][0].Square) & board.WhitePiecesBitboard) * 3; //get squares king is attacking, AND with own pieces find # of set bits, and add a multiplier
+        int black_safety_score = BitboardHelper.GetNumberOfSetBits(BitboardHelper.GetKingAttacks(piece_lists[11][0].Square) & board.BlackPiecesBitboard) * 3;
+
+        //==========
+        //local vars
+
+
 
         //Mobility
         //========
@@ -140,23 +143,23 @@ public class MyBot : IChessBot
                 {
                     if (piece.IsWhite)
                     {
-                        white_piece_mobility_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, true) & ~black_pawn_attacks_bb;   //move white pieces where black pawns aren't attacking
-                        white_mobility += BitboardHelper.GetNumberOfSetBits(white_piece_mobility_bb) * 10;
+                        white_piece_mobility_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, true);   
+                        white_mobility += (BitboardHelper.GetNumberOfSetBits(white_piece_mobility_bb) * 3) + (BitboardHelper.GetNumberOfSetBits(white_piece_mobility_bb & ~black_pawn_attacks_bb) * 2);  //bonus to move white piece where black pawns aren't attacking
                         //BitboardHelper.VisualizeBitboard(white_piece_attacks_bb);
                     }
                     else
                     {
-                        black_piece_mobility_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, false) & ~white_pawn_attacks_bb;  //move black pieces where white pawns aren't attacking
-                        black_mobility += BitboardHelper.GetNumberOfSetBits(black_piece_mobility_bb) * 10;
+                        black_piece_mobility_bb = BitboardHelper.GetPieceAttacks(piece_type, piece.Square, board, false) ;  
+                        black_mobility += (BitboardHelper.GetNumberOfSetBits(black_piece_mobility_bb) * 3) + (BitboardHelper.GetNumberOfSetBits(black_piece_mobility_bb & ~white_pawn_attacks_bb) * 2);  //bonus to move black piece where white pawns aren't attacking
                     }
                 }
             }
-                //========
-                //Mobility
+            //========
+            //Mobility
         }
 
         //calculate eval
-        int eval = (white_points - black_points) + (white_checkmates - black_checkmates) + (white_mobility - black_mobility);
+        int eval = (white_points - black_points) + (white_checkmates - black_checkmates) + (white_mobility - black_mobility) + (white_safety_score - black_safety_score);
         return eval;
     }
 
